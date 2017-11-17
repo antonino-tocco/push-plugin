@@ -44,7 +44,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -54,34 +53,31 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
   private static final String LOG_TAG = "Push_FCMService";
   private static HashMap<Integer, ArrayList<String>> messageMap = new HashMap<Integer, ArrayList<String>>();
 
-  public void setNotification(int notId, String message) {
+  public void setNotification(int notId, String message){
     ArrayList<String> messageList = messageMap.get(notId);
-    if (messageList == null) {
+    if(messageList == null) {
       messageList = new ArrayList<String>();
       messageMap.put(notId, messageList);
     }
 
-    if (message.isEmpty()) {
+    if(message.isEmpty()){
       messageList.clear();
-    } else {
+    }else{
       messageList.add(message);
     }
   }
 
   @Override
-  public void onMessageReceived(RemoteMessage message) {
+  public void onMessageReceived(RemoteMessage message){
 
     String from = message.getFrom();
     Log.d(LOG_TAG, "onMessage - from: " + from);
 
     Bundle extras = new Bundle();
 
-    if (message.getNotification() != null) {
-      extras.putString(TITLE, message.getNotification().getTitle());
-      extras.putString(MESSAGE, message.getNotification().getBody());
-      extras.putString(SOUND, message.getNotification().getSound());
-      extras.putString(ICON, message.getNotification().getIcon());
-      extras.putString(COLOR, message.getNotification().getColor());
+    if (message.getNotification()!=null) {
+      extras.putString(TITLE,message.getNotification().getTitle());
+      extras.putString(MESSAGE,message.getNotification().getBody());
     }
     for (Map.Entry<String, String> entry : message.getData().entrySet()) {
       extras.putString(entry.getKey(), entry.getValue());
@@ -90,8 +86,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     if (extras != null && isAvailableSender(from)) {
       Context applicationContext = getApplicationContext();
 
-      SharedPreferences prefs = applicationContext.getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH,
-          Context.MODE_PRIVATE);
+      SharedPreferences prefs = applicationContext.getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
       boolean forceShow = prefs.getBoolean(FORCE_SHOW, false);
       boolean clearBadge = prefs.getBoolean(CLEAR_BADGE, false);
       String messageKey = prefs.getString(MESSAGE_KEY, MESSAGE);
@@ -108,6 +103,9 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
         Log.d(LOG_TAG, "foreground");
         extras.putBoolean(FOREGROUND, true);
         extras.putBoolean(COLDSTART, false);
+
+        showNotificationIfPossible(applicationContext, extras);
+
         PushPlugin.sendExtras(extras);
       }
       // if we are in the foreground and forceShow is `true`, force show the notification if the data has at least a message or title
@@ -117,6 +115,8 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
         extras.putBoolean(COLDSTART, false);
 
         showNotificationIfPossible(applicationContext, extras);
+
+        PushPlugin.sendExtras(extras);
       }
       // if we are not in the foreground always send notification if the data has at least a message or title
       else {
@@ -134,7 +134,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
    */
   private void replaceKey(Context context, String oldKey, String newKey, Bundle extras, Bundle newExtras) {
     Object value = extras.get(oldKey);
-    if (value != null) {
+    if ( value != null ) {
       if (value instanceof String) {
         value = localizeKey(context, newKey, (String) value);
 
@@ -163,7 +163,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
         if (!localeObject.isNull(LOC_DATA)) {
           String localeData = localeObject.getString(LOC_DATA);
           JSONArray localeDataArray = new JSONArray(localeData);
-          for (int i = 0; i < localeDataArray.length(); i++) {
+          for (int i = 0 ; i < localeDataArray.length(); i++) {
             localeFormatData.add(localeDataArray.getString(i));
           }
         }
@@ -175,12 +175,14 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
 
         if (resourceId != 0) {
           return resources.getString(resourceId, localeFormatData.toArray());
-        } else {
+        }
+        else {
           Log.d(LOG_TAG, "can't find resource for locale key = " + localeKey);
 
           return value;
         }
-      } catch (JSONException e) {
+      }
+      catch(JSONException e) {
         Log.d(LOG_TAG, "no locale found for key = " + key + ", error " + e.getMessage());
 
         return value;
@@ -194,21 +196,20 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
    * Replace alternate keys with our canonical value
    */
   private String normalizeKey(String key, String messageKey, String titleKey) {
-    if (key.equals(BODY) || key.equals(ALERT) || key.equals(MP_MESSAGE) || key.equals(GCM_NOTIFICATION_BODY)
-        || key.equals(TWILIO_BODY) || key.equals(messageKey)) {
+    if (key.equals(BODY) || key.equals(ALERT) || key.equals(MP_MESSAGE) || key.equals(GCM_NOTIFICATION_BODY) || key.equals(TWILIO_BODY) || key.equals(messageKey)) {
       return MESSAGE;
     } else if (key.equals(TWILIO_TITLE) || key.equals(SUBJECT) || key.equals(titleKey)) {
       return TITLE;
-    } else if (key.equals(MSGCNT) || key.equals(BADGE)) {
+    }else if (key.equals(MSGCNT) || key.equals(BADGE)) {
       return COUNT;
     } else if (key.equals(SOUNDNAME) || key.equals(TWILIO_SOUND)) {
       return SOUND;
     } else if (key.startsWith(GCM_NOTIFICATION)) {
-      return key.substring(GCM_NOTIFICATION.length() + 1, key.length());
+      return key.substring(GCM_NOTIFICATION.length()+1, key.length());
     } else if (key.startsWith(GCM_N)) {
-      return key.substring(GCM_N.length() + 1, key.length());
+      return key.substring(GCM_N.length()+1, key.length());
     } else if (key.startsWith(UA_PREFIX)) {
-      key = key.substring(UA_PREFIX.length() + 1, key.length());
+      key = key.substring(UA_PREFIX.length()+1, key.length());
       return key.toLowerCase();
     } else {
       return key;
@@ -233,13 +234,13 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
       if (key.equals(PARSE_COM_DATA) || key.equals(MESSAGE) || key.equals(messageKey)) {
         Object json = extras.get(key);
         // Make sure data is json object stringified
-        if (json instanceof String && ((String) json).startsWith("{")) {
+        if ( json instanceof String && ((String) json).startsWith("{") ) {
           Log.d(LOG_TAG, "extracting nested message data from key = " + key);
           try {
             // If object contains message keys promote each value to the root of the bundle
             JSONObject data = new JSONObject((String) json);
-            if (data.has(ALERT) || data.has(MESSAGE) || data.has(BODY) || data.has(TITLE) || data.has(messageKey)
-                || data.has(titleKey)) {
+            if ( data.has(ALERT) || data.has(MESSAGE) || data.has(BODY) || data.has(TITLE) ||
+              data.has(messageKey) || data.has(titleKey) ) {
               Iterator<String> jsonIter = data.keys();
               while (jsonIter.hasNext()) {
                 String jsonKey = jsonIter.next();
@@ -253,7 +254,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
                 newExtras.putString(jsonKey, value);
               }
             }
-          } catch (JSONException e) {
+          } catch( JSONException e) {
             Log.e(LOG_TAG, "normalizeExtras: JSON exception");
           }
         } else {
@@ -308,7 +309,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     return count;
   }
 
-  private void showNotificationIfPossible(Context context, Bundle extras) {
+  private void showNotificationIfPossible (Context context, Bundle extras) {
 
     // Send a notification if there is a message or title, otherwise just send data
     String message = extras.getString(MESSAGE);
@@ -326,18 +327,19 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     Log.d(LOG_TAG, "contentAvailable =[" + contentAvailable + "]");
     Log.d(LOG_TAG, "forceStart =[" + forceStart + "]");
 
-    if ((message != null && message.length() != 0) || (title != null && title.length() != 0)) {
+    if ((message != null && message.length() != 0) ||
+      (title != null && title.length() != 0)) {
 
       Log.d(LOG_TAG, "create notification");
 
-      if (title == null || title.isEmpty()) {
+      if(title == null || title.isEmpty()){
         extras.putString(TITLE, getAppName(this));
       }
 
       createNotification(context, extras);
     }
 
-    if (!PushPlugin.isActive() && "1".equals(forceStart)) {
+    if(!PushPlugin.isActive() && "1".equals(forceStart)){
       Log.d(LOG_TAG, "app is not running but we should start it and put in background");
       Intent intent = new Intent(this, PushHandlerActivity.class);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -365,8 +367,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     notificationIntent.putExtra(NOT_ID, notId);
 
     int requestCode = new Random().nextInt();
-    PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT);
+    PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     Intent dismissedNotificationIntent = new Intent(this, PushDismissedHandler.class);
     dismissedNotificationIntent.putExtra(PUSH_BUNDLE, extras);
@@ -375,36 +376,23 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     dismissedNotificationIntent.setAction(PUSH_DISMISSED);
 
     requestCode = new Random().nextInt();
-    PendingIntent deleteIntent = PendingIntent.getBroadcast(this, requestCode, dismissedNotificationIntent,
-        PendingIntent.FLAG_CANCEL_CURRENT);
+    PendingIntent deleteIntent = PendingIntent.getBroadcast(this, requestCode, dismissedNotificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-    NotificationCompat.Builder mBuilder = null;
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      String channelID = extras.getString(ANDROID_CHANNEL_ID);
-
-      // if the push payload specifies a channel use it
-      if (channelID != null) {
-        mBuilder = new NotificationCompat.Builder(context, channelID);
-      } else {
-        List<NotificationChannel> channels = mNotificationManager.getNotificationChannels();
-
-        if (channels.size() == 1) {
-          channelID = channels.get(0).getId();
-        } else {
-          channelID = extras.getString(ANDROID_CHANNEL_ID, DEFAULT_CHANNEL_ID);
-        }
-        Log.d(LOG_TAG, "Using channel ID = " + channelID);
-        mBuilder = new NotificationCompat.Builder(context, channelID);
-      }
-
-    } else {
-      mBuilder = new NotificationCompat.Builder(context);
-    }
-
-    mBuilder.setWhen(System.currentTimeMillis()).setContentTitle(fromHtml(extras.getString(TITLE)))
-        .setTicker(fromHtml(extras.getString(TITLE))).setContentIntent(contentIntent).setDeleteIntent(deleteIntent)
+    NotificationCompat.Builder mBuilder =
+      new NotificationCompat.Builder(context)
+        .setWhen(System.currentTimeMillis())
+        .setContentTitle(fromHtml(extras.getString(TITLE)))
+        .setTicker(fromHtml(extras.getString(TITLE)))
+        .setContentIntent(contentIntent)
+        .setDeleteIntent(deleteIntent)
         .setAutoCancel(true);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      NotificationChannel channel = new NotificationChannel("com.roomie.roomie",
+        "Channel human readable title",
+        NotificationManager.IMPORTANCE_DEFAULT);
+      mNotificationManager.createNotificationChannel(channel);
+      mBuilder.setChannelId("com.roomie.roomie");
+    }
 
     SharedPreferences prefs = context.getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
     String localIcon = prefs.getString(ICON, null);
@@ -416,89 +404,84 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     Log.d(LOG_TAG, "stored sound=" + soundOption);
     Log.d(LOG_TAG, "stored vibrate=" + vibrateOption);
 
-    /*
-     * Notification Vibration
-     */
+        /*
+         * Notification Vibration
+         */
 
     setNotificationVibration(extras, vibrateOption, mBuilder);
 
-    /*
-     * Notification Icon Color
-     *
-     * Sets the small-icon background color of the notification.
-     * To use, add the `iconColor` key to plugin android options
-     *
-     */
-    setNotificationIconColor(extras.getString(COLOR), mBuilder, localIconColor);
+        /*
+         * Notification Icon Color
+         *
+         * Sets the small-icon background color of the notification.
+         * To use, add the `iconColor` key to plugin android options
+         *
+         */
+    setNotificationIconColor(extras.getString("color"), mBuilder, localIconColor);
 
-    /*
-     * Notification Icon
-     *
-     * Sets the small-icon of the notification.
-     *
-     * - checks the plugin options for `icon` key
-     * - if none, uses the application icon
-     *
-     * The icon value must be a string that maps to a drawable resource.
-     * If no resource is found, falls
-     *
-     */
+        /*
+         * Notification Icon
+         *
+         * Sets the small-icon of the notification.
+         *
+         * - checks the plugin options for `icon` key
+         * - if none, uses the application icon
+         *
+         * The icon value must be a string that maps to a drawable resource.
+         * If no resource is found, falls
+         *
+         */
     setNotificationSmallIcon(context, extras, packageName, resources, mBuilder, localIcon);
 
-    /*
-     * Notification Large-Icon
-     *
-     * Sets the large-icon of the notification
-     *
-     * - checks the gcm data for the `image` key
-     * - checks to see if remote image, loads it.
-     * - checks to see if assets image, Loads It.
-     * - checks to see if resource image, LOADS IT!
-     * - if none, we don't set the large icon
-     *
-     */
+        /*
+         * Notification Large-Icon
+         *
+         * Sets the large-icon of the notification
+         *
+         * - checks the gcm data for the `image` key
+         * - checks to see if remote image, loads it.
+         * - checks to see if assets image, Loads It.
+         * - checks to see if resource image, LOADS IT!
+         * - if none, we don't set the large icon
+         *
+         */
     setNotificationLargeIcon(extras, packageName, resources, mBuilder);
 
-    /*
-     * Notification Sound
-     */
+        /*
+         * Notification Sound
+         */
     if (soundOption) {
       setNotificationSound(context, extras, mBuilder);
     }
 
-    /*
-     *  LED Notification
-     */
+        /*
+         *  LED Notification
+         */
     setNotificationLedColor(extras, mBuilder);
 
-    /*
-     *  Priority Notification
-     */
+        /*
+         *  Priority Notification
+         */
     setNotificationPriority(extras, mBuilder);
 
-    /*
-     * Notification message
-     */
+        /*
+         * Notification message
+         */
     setNotificationMessage(notId, extras, mBuilder);
 
-    /*
-     * Notification count
-     */
+        /*
+         * Notification count
+         */
     setNotificationCount(context, extras, mBuilder);
 
-    /*
-     *  Notification ongoing
-     */
-    setNotificationOngoing(extras, mBuilder);
-
-    /*
-     * Notification count
-     */
+        /*
+         * Notification count
+         */
     setVisibility(context, extras, mBuilder);
 
-    /*
-     * Notification add actions
-     */
+        /*
+         * Notification add actions
+         */
     createActions(extras, mBuilder, resources, packageName, notId);
 
     mNotificationManager.notify(appName, notId, mBuilder.build());
@@ -511,15 +494,14 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     intent.putExtra(NOT_ID, notId);
   }
 
-  private void createActions(Bundle extras, NotificationCompat.Builder mBuilder, Resources resources,
-      String packageName, int notId) {
+  private void createActions(Bundle extras, NotificationCompat.Builder mBuilder, Resources resources, String packageName, int notId) {
     Log.d(LOG_TAG, "create actions: with in-line");
     String actions = extras.getString(ACTIONS);
     if (actions != null) {
       try {
         JSONArray actionsArray = new JSONArray(actions);
         ArrayList<NotificationCompat.Action> wActions = new ArrayList<NotificationCompat.Action>();
-        for (int i = 0; i < actionsArray.length(); i++) {
+        for (int i=0; i < actionsArray.length(); i++) {
           int min = 1;
           int max = 2000000000;
           Random random = new Random();
@@ -545,33 +527,33 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
 
             if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.M) {
               Log.d(LOG_TAG, "push activity for notId " + notId);
-              pIntent = PendingIntent.getActivity(this, uniquePendingIntentRequestCode, intent,
-                  PendingIntent.FLAG_ONE_SHOT);
+              pIntent = PendingIntent.getActivity(this, uniquePendingIntentRequestCode, intent, PendingIntent.FLAG_ONE_SHOT);
             } else {
               Log.d(LOG_TAG, "push receiver for notId " + notId);
-              pIntent = PendingIntent.getBroadcast(this, uniquePendingIntentRequestCode, intent,
-                  PendingIntent.FLAG_ONE_SHOT);
+              pIntent = PendingIntent.getBroadcast(this, uniquePendingIntentRequestCode, intent, PendingIntent.FLAG_ONE_SHOT);
             }
           } else if (foreground) {
             intent = new Intent(this, PushHandlerActivity.class);
             updateIntent(intent, action.getString(CALLBACK), extras, foreground, notId);
-            pIntent = PendingIntent.getActivity(this, uniquePendingIntentRequestCode, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+            pIntent = PendingIntent.getActivity(this, uniquePendingIntentRequestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
           } else {
             intent = new Intent(this, BackgroundActionButtonHandler.class);
             updateIntent(intent, action.getString(CALLBACK), extras, foreground, notId);
-            pIntent = PendingIntent.getBroadcast(this, uniquePendingIntentRequestCode, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+            pIntent = PendingIntent.getBroadcast(this, uniquePendingIntentRequestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
           }
 
-          NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action.Builder(
-              getImageId(resources, action.optString(ICON, ""), packageName), action.getString(TITLE), pIntent);
+          NotificationCompat.Action.Builder actionBuilder =
+            new NotificationCompat.Action.Builder(resources.getIdentifier(action.optString(ICON, ""), DRAWABLE, packageName),
+              action.getString(TITLE), pIntent);
 
           RemoteInput remoteInput = null;
           if (inline) {
             Log.d(LOG_TAG, "create remote input");
-            String replyLabel = action.optString(INLINE_REPLY_LABEL, "Enter your reply here");
-            remoteInput = new RemoteInput.Builder(INLINE_REPLY).setLabel(replyLabel).build();
+            String replyLabel = "Enter your reply here";
+            remoteInput =
+              new RemoteInput.Builder(INLINE_REPLY)
+                .setLabel(replyLabel)
+                .build();
             actionBuilder.addRemoteInput(remoteInput);
           }
 
@@ -581,15 +563,15 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
           if (inline) {
             mBuilder.addAction(wAction);
           } else {
-            mBuilder.addAction(getImageId(resources, action.optString(ICON, ""), packageName), action.getString(TITLE),
-                pIntent);
+            mBuilder.addAction(resources.getIdentifier(action.optString(ICON, ""), DRAWABLE, packageName),
+              action.getString(TITLE), pIntent);
           }
           wAction = null;
           pIntent = null;
         }
         mBuilder.extend(new WearableExtender().addActions(wActions));
         wActions.clear();
-      } catch (JSONException e) {
+      } catch(JSONException e) {
         // nope
       }
     }
@@ -602,6 +584,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
       mBuilder.setNumber(count);
     }
   }
+
 
   private void setVisibility(Context context, Bundle extras, NotificationCompat.Builder mBuilder) {
     String visibilityStr = extras.getString(VISIBILITY);
@@ -627,8 +610,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
       for (int i = 0; i < items.length; i++) {
         try {
           results[i] = Long.parseLong(items[i].trim());
-        } catch (NumberFormatException nfe) {
-        }
+        } catch (NumberFormatException nfe) {}
       }
       mBuilder.setVibrate(results);
     } else {
@@ -638,15 +620,11 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     }
   }
 
-  private void setNotificationOngoing(Bundle extras, NotificationCompat.Builder mBuilder) {
-    boolean ongoing = Boolean.parseBoolean(extras.getString(ONGOING, "false"));
-    mBuilder.setOngoing(ongoing);
-  }
-
   private void setNotificationMessage(int notId, Bundle extras, NotificationCompat.Builder mBuilder) {
     String message = extras.getString(MESSAGE);
+
     String style = extras.getString(STYLE, STYLE_TEXT);
-    if (STYLE_INBOX.equals(style)) {
+    if(STYLE_INBOX.equals(style)) {
       setNotification(notId, message);
 
       mBuilder.setContentText(fromHtml(message));
@@ -661,7 +639,8 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
           stacking = stacking.replace("%n%", sizeListMessage);
         }
         NotificationCompat.InboxStyle notificationInbox = new NotificationCompat.InboxStyle()
-            .setBigContentTitle(fromHtml(extras.getString(TITLE))).setSummaryText(fromHtml(stacking));
+          .setBigContentTitle(fromHtml(extras.getString(TITLE)))
+          .setSummaryText(fromHtml(stacking));
 
         for (int i = messageList.size() - 1; i >= 0; i--) {
           notificationInbox.addLine(fromHtml(messageList.get(i)));
@@ -706,11 +685,11 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
 
         mBuilder.setStyle(bigText);
       }
-      /*
-      else {
-          mBuilder.setContentText("<missing message content>");
-      }
-      */
+            /*
+            else {
+                mBuilder.setContentText("<missing message content>");
+            }
+            */
     }
   }
 
@@ -722,8 +701,8 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     if (SOUND_RINGTONE.equals(soundname)) {
       mBuilder.setSound(android.provider.Settings.System.DEFAULT_RINGTONE_URI);
     } else if (soundname != null && !soundname.contentEquals(SOUND_DEFAULT)) {
-      Uri sound = Uri
-          .parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/raw/" + soundname);
+      Uri sound = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE
+        + "://" + context.getPackageName() + "/raw/" + soundname);
       Log.d(LOG_TAG, sound.toString());
       mBuilder.setSound(sound);
     } else {
@@ -740,8 +719,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
       for (int i = 0; i < items.length; i++) {
         try {
           results[i] = Integer.parseInt(items[i].trim());
-        } catch (NumberFormatException nfe) {
-        }
+        } catch (NumberFormatException nfe) {}
       }
       if (results.length == 4) {
         mBuilder.setLights(Color.argb(results[0], results[1], results[2], results[3]), 500, 500);
@@ -782,10 +760,10 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     paint.setAntiAlias(true);
     canvas.drawARGB(0, 0, 0, 0);
     paint.setColor(color);
-    float cx = bitmap.getWidth() / 2;
-    float cy = bitmap.getHeight() / 2;
+    float cx = bitmap.getWidth()/2;
+    float cy = bitmap.getHeight()/2;
     float radius = cx < cy ? cx : cy;
-    canvas.drawCircle(cx, cy, radius, paint);
+    canvas.drawCircle(cx,cy,radius,paint);
 
     paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
     canvas.drawBitmap(bitmap, rect, rect, paint);
@@ -795,8 +773,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     return output;
   }
 
-  private void setNotificationLargeIcon(Bundle extras, String packageName, Resources resources,
-      NotificationCompat.Builder mBuilder) {
+  private void setNotificationLargeIcon(Bundle extras, String packageName, Resources resources, NotificationCompat.Builder mBuilder) {
     String gcmLargeIcon = extras.getString(IMAGE); // from gcm
     String imageType = extras.getString(IMAGE_TYPE, IMAGE_TYPE_SQUARE);
     if (gcmLargeIcon != null && !"".equals(gcmLargeIcon)) {
@@ -824,7 +801,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
           Log.d(LOG_TAG, "using assets large-icon from gcm");
         } catch (IOException e) {
           int largeIconId = 0;
-          largeIconId = getImageId(resources, gcmLargeIcon, packageName);
+          largeIconId = resources.getIdentifier(gcmLargeIcon, DRAWABLE, packageName);
           if (largeIconId != 0) {
             Bitmap largeIconBitmap = BitmapFactory.decodeResource(resources, largeIconId);
             mBuilder.setLargeIcon(largeIconBitmap);
@@ -837,23 +814,15 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
     }
   }
 
-  private int getImageId(Resources resources, String icon, String packageName) {
-    int iconId = resources.getIdentifier(icon, DRAWABLE, packageName);
-    if (iconId == 0) {
-      iconId = resources.getIdentifier(icon, "mipmap", packageName);
-    }
-    return iconId;
-  }
-
-  private void setNotificationSmallIcon(Context context, Bundle extras, String packageName, Resources resources,
-      NotificationCompat.Builder mBuilder, String localIcon) {
+  private void setNotificationSmallIcon(Context context, Bundle extras, String packageName, Resources resources, NotificationCompat.Builder mBuilder, String localIcon) {
     int iconId = 0;
     String icon = extras.getString(ICON);
     if (icon != null && !"".equals(icon)) {
-      iconId = getImageId(resources, icon, packageName);
+      iconId = resources.getIdentifier(icon, DRAWABLE, packageName);
       Log.d(LOG_TAG, "using icon from plugin options");
-    } else if (localIcon != null && !"".equals(localIcon)) {
-      iconId = getImageId(resources, localIcon, packageName);
+    }
+    else if (localIcon != null && !"".equals(localIcon)) {
+      iconId = resources.getIdentifier(localIcon, DRAWABLE, packageName);
       Log.d(LOG_TAG, "using icon from plugin options");
     }
     if (iconId == 0) {
@@ -871,7 +840,8 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
       } catch (IllegalArgumentException e) {
         Log.e(LOG_TAG, "couldn't parse color from android options");
       }
-    } else if (localIconColor != null && !"".equals(localIconColor)) {
+    }
+    else if (localIconColor != null && !"".equals(localIconColor)) {
       try {
         iconColor = Color.parseColor(localIconColor);
       } catch (IllegalArgumentException e) {
@@ -899,8 +869,8 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
   }
 
   public static String getAppName(Context context) {
-    CharSequence appName = context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
-    return (String) appName;
+    CharSequence appName =  context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+    return (String)appName;
   }
 
   private int parseInt(String value, Bundle extras) {
@@ -908,9 +878,11 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
 
     try {
       retval = Integer.parseInt(extras.getString(value));
-    } catch (NumberFormatException e) {
+    }
+    catch(NumberFormatException e) {
       Log.e(LOG_TAG, "Number format exception - Error parsing " + value + ": " + e.getMessage());
-    } catch (Exception e) {
+    }
+    catch(Exception e) {
       Log.e(LOG_TAG, "Number format exception - Error parsing " + value + ": " + e.getMessage());
     }
 
@@ -925,8 +897,7 @@ public class FCMService extends FirebaseMessagingService implements PushConstant
   }
 
   private boolean isAvailableSender(String from) {
-    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH,
-        Context.MODE_PRIVATE);
+    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
     String savedSenderID = sharedPref.getString(SENDER_ID, "");
 
     return from.equals(savedSenderID) || from.startsWith("/topics/");
