@@ -27,6 +27,7 @@
 #define GMP_NO_MODULES true
 
 #import "PushPlugin.h"
+#import "EBBannerView.h"
 @import FirebaseInstanceID;
 @import FirebaseMessaging;
 @import FirebaseAnalytics;
@@ -497,21 +498,28 @@
         [pluginResult setKeepCallbackAsBool:YES];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 
-        #if defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-            UNMutableNotificationContent* notificationContent = [[UNMutableNotificationContent alloc] init];
-            notificationContent.title = [message objectForKey:@"title"];
-            notificationContent.body = [message objectForKey:@"body"];
-            notificationContent.userInfo = additionalData;
-            UNNotificationRequest *notificationRequest = [UNNotificationRequest requestWithIdentifier:@"4roomie" content:notificationContent trigger:nil];
-            UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
-            [center addNotificationRequest:notificationRequest withCompletionHandler:nil];
-        #else
-            UILocalNotification *notification = [[UILocalNotification alloc] init];
-            notification.alertTitle = [message objectForKey:@"title"];
-            notification.alertBody = [message objectForKey:@"message"];
-            notification.userInfo = additionalData;
-            [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
-        #endif
+        if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
+            EBBannerView* bannerView = [EBBannerView bannerViewWithStyle:EBBannerViewStyleiOS11];
+            bannerView.content = [message objectForKey:@"message"];
+            bannerView.title = [message objectForKey:@"title"];
+            [bannerView show];
+        } else {
+            #if defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
+                UNMutableNotificationContent* notificationContent = [[UNMutableNotificationContent alloc] init];
+                notificationContent.title = [message objectForKey:@"title"];
+                notificationContent.body = [message objectForKey:@"body"];
+                notificationContent.userInfo = additionalData;
+                UNNotificationRequest *notificationRequest = [UNNotificationRequest requestWithIdentifier:@"4roomie" content:notificationContent trigger:nil];
+                UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+                [center addNotificationRequest:notificationRequest withCompletionHandler:nil];
+            #else
+                UILocalNotification *notification = [[UILocalNotification alloc] init];
+                notification.alertTitle = [message objectForKey:@"title"];
+                notification.alertBody = [message objectForKey:@"message"];
+                notification.userInfo = additionalData;
+                [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+            #endif
+        }
 
         self.coldstart = NO;
         self.notificationMessage = nil;
