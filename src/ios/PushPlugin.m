@@ -499,10 +499,10 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 
         if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
-            EBBannerView* bannerView = [EBBannerView bannerViewWithStyle:EBBannerViewStyleiOS11];
+            /*EBBannerView* bannerView = [EBBannerView bannerViewWithStyle:EBBannerViewStyleiOS11];
             bannerView.content = [message objectForKey:@"message"];
             bannerView.title = [message objectForKey:@"title"];
-            [bannerView show];
+            [bannerView show];*/
         } else {
             #if defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
                 UNMutableNotificationContent* notificationContent = [[UNMutableNotificationContent alloc] init];
