@@ -27,7 +27,6 @@
 #define GMP_NO_MODULES true
 
 #import "PushPlugin.h"
-#import "EBBannerView.h"
 @import FirebaseInstanceID;
 @import FirebaseMessaging;
 @import FirebaseAnalytics;
@@ -524,6 +523,14 @@
         self.coldstart = NO;
         self.notificationMessage = nil;
     }
+}
+- (void)userNotificationCenter:(UNUserNotificationCenter* )center willPresentNotification:(UNNotification* )notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
+    //For notification Banner - when app in foreground
+
+    completionHandler(UNNotificationPresentationOptionAlert);
+
+    // Print Notification info
+    NSLog(@"Userinfo %@",notification.request.content.userInfo);
 }
 
 - (void)setApplicationIconBadgeNumber:(CDVInvokedUrlCommand *)command
